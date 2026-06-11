@@ -10,33 +10,52 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as ApiCarsRouteImport } from './routes/api/cars'
+import { Route as ApiCarsIdRouteImport } from './routes/api/cars.$id'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiCarsRoute = ApiCarsRouteImport.update({
+  id: '/api/cars',
+  path: '/api/cars',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiCarsIdRoute = ApiCarsIdRouteImport.update({
+  id: '/$id',
+  path: '/$id',
+  getParentRoute: () => ApiCarsRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/api/cars': typeof ApiCarsRouteWithChildren
+  '/api/cars/$id': typeof ApiCarsIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/api/cars': typeof ApiCarsRouteWithChildren
+  '/api/cars/$id': typeof ApiCarsIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/api/cars': typeof ApiCarsRouteWithChildren
+  '/api/cars/$id': typeof ApiCarsIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/'
+  fullPaths: '/' | '/api/cars' | '/api/cars/$id'
   fileRoutesByTo: FileRoutesByTo
-  to: '/'
-  id: '__root__' | '/'
+  to: '/' | '/api/cars' | '/api/cars/$id'
+  id: '__root__' | '/' | '/api/cars' | '/api/cars/$id'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  ApiCarsRoute: typeof ApiCarsRouteWithChildren
 }
 
 declare module '@tanstack/react-router' {
@@ -48,11 +67,37 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/cars': {
+      id: '/api/cars'
+      path: '/api/cars'
+      fullPath: '/api/cars'
+      preLoaderRoute: typeof ApiCarsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/cars/$id': {
+      id: '/api/cars/$id'
+      path: '/$id'
+      fullPath: '/api/cars/$id'
+      preLoaderRoute: typeof ApiCarsIdRouteImport
+      parentRoute: typeof ApiCarsRoute
+    }
   }
 }
 
+interface ApiCarsRouteChildren {
+  ApiCarsIdRoute: typeof ApiCarsIdRoute
+}
+
+const ApiCarsRouteChildren: ApiCarsRouteChildren = {
+  ApiCarsIdRoute: ApiCarsIdRoute,
+}
+
+const ApiCarsRouteWithChildren =
+  ApiCarsRoute._addFileChildren(ApiCarsRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  ApiCarsRoute: ApiCarsRouteWithChildren,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
