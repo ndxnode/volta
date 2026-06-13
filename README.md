@@ -1,193 +1,86 @@
-Welcome to your new TanStack Start app! 
+# VOLTA — Electric Car Index
 
-# Getting Started
+An elegant, dark-only sci-fi showroom for browsing, comparing, and exploring **104 electric cars**
+across 33 makes. Built with TanStack Start, React, TypeScript, Tailwind v4, and shadcn/ui.
 
-To run this application:
+## Features
+
+- **Browse** (`/cars`) — responsive grid with live make / body / drivetrain / price / range filters and
+  sorting, all persisted in the URL (shareable, survives reload + back/forward).
+- **Detail** (`/cars/$id`) — hero with brand-accent backwash, animated stat bars, and a full spec sheet.
+- **Compare** (`/compare`) — line up to 3 EVs side by side with **best-in-row** highlighting (knows which
+  metrics are higher- vs lower-is-better). Deep-linkable: `/compare?cars=a,b,c`.
+- **Command palette** (`⌘K`) — instant fuzzy search across the lineup plus quick navigation.
+- **Stats** (`/stats`) — range-vs-price scatter by drivetrain, average battery by brand, and an
+  efficiency leaderboard, with animated headline tiles.
+- **Favorites** (`/favorites`) — saved to `localStorage`, synced across tabs.
+
+## Tech
+
+| Concern | Choice |
+| --- | --- |
+| Framework | TanStack Start (React 19, file-based routing, SSR, server routes) |
+| Data fetching | TanStack Query (route-loader `ensureQueryData` + `useSuspenseQuery`) |
+| Styling | Tailwind v4 (CSS-first `@theme`, oklch tokens) + shadcn/ui |
+| Validation | Zod (`CarSchema` is the single source of truth; bounds double as plausibility checks) |
+| Animation | `motion` (`LazyMotion` + `domAnimation`), `MotionConfig reducedMotion="user"` |
+| Charts | Recharts via shadcn `chart`, mounted behind `ClientOnly` (SSR-safe) |
+
+State boundaries: **server data** → TanStack Query (`staleTime: Infinity`); **filters/sort** → URL via
+`validateSearch`; **compare** → `useSyncExternalStore` over `sessionStorage` (max 3); **favorites** →
+`useSyncExternalStore` over `localStorage`.
+
+## The API
+
+The app serves its own data through TanStack Start server routes — a real, curl-able boundary:
+
+```bash
+curl localhost:3000/api/cars | jq length            # 104
+curl "localhost:3000/api/cars?body=suv&drive=AWD"   # filtered (reuses lib/car-filters)
+curl -i localhost:3000/api/cars/does-not-exist      # 404 {"error":"not_found"}
+```
+
+The client fetches the full list once and filters in memory, so sliders and `⌘K` are instant.
+
+## Getting started
 
 ```bash
 npm install
-npm run dev
+npm run dev          # http://localhost:3000
 ```
-
-# Building For Production
-
-To build this application for production:
 
 ```bash
-npm run build
+npm run typecheck    # tsc --noEmit
+npm test             # vitest (car-filters, format, dataset integrity)
+npm run check:images # HEAD-checks every imageUrl resolves (throttled, browser UA)
+npm run build        # production SSR build
+npm run start        # serve the production build
 ```
 
-## Testing
+## Data & attribution
 
-This project uses [Vitest](https://vitest.dev/) for testing. You can run the tests with:
+The dataset is assembled from open, redistribution-friendly sources and hand-curated for US pricing and
+photography:
 
-```bash
-npm run test
+- **Specs** — [Open EV Data](https://github.com/open-ev-data/open-ev-data-dataset) v1.24.0
+  (battery kWh, charge rates, WLTP/EPA range, body/dimensions). Licensed **CDLA-Permissive-2.0**.
+- **EPA range** — [fueleconomy.gov](https://www.fueleconomy.gov/) (US EPA, public domain).
+- **Prices** — researched US MSRP per trim; non-US-market models use a converted estimate and are
+  flagged accordingly in the curation notes.
+- **Photos** — [Wikimedia Commons](https://commons.wikimedia.org/), hotlinked from `upload.wikimedia.org`
+  (sanctioned). Each car stores a per-photo `imageAttribution` string (photographer + license) shown in
+  the UI; cars without a confident Commons match fall back to a designed brand-gradient placeholder.
+
+`rangeSource` (`EPA` / `WLTP-converted` / `manufacturer-est`) records provenance for every range figure.
+
+## Project layout
+
 ```
-
-## Styling
-
-This project uses [Tailwind CSS](https://tailwindcss.com/) for styling.
-
-### Removing Tailwind CSS
-
-If you prefer not to use Tailwind CSS:
-
-1. Remove the demo pages in `src/routes/demo/`
-2. Replace the Tailwind import in `src/styles.css` with your own styles
-3. Remove `tailwindcss()` from the plugins array in `vite.config.ts`
-4. Uninstall the packages: `npm install @tailwindcss/vite tailwindcss -D`
-
-
-
-## Routing
-
-This project uses [TanStack Router](https://tanstack.com/router) with file-based routing. Routes are managed as files in `src/routes`.
-
-### Adding A Route
-
-To add a new route to your application just add a new file in the `./src/routes` directory.
-
-TanStack will automatically generate the content of the route file for you.
-
-Now that you have two routes you can use a `Link` component to navigate between them.
-
-### Adding Links
-
-To use SPA (Single Page Application) navigation you will need to import the `Link` component from `@tanstack/react-router`.
-
-```tsx
-import { Link } from "@tanstack/react-router";
+src/
+├── routes/            # __root, index, cars/, compare, stats, favorites, api/
+├── data/cars/         # 10 brand-group files + index.ts (merge → zod-parse → dedupe)
+├── lib/               # car-schema (source of truth), car-filters, format, queries
+├── hooks/             # use-favorites, use-compare (SSR-safe stores)
+└── components/        # ui/ (shadcn) · layout · cars · detail · compare · charts · shared
+scripts/               # seed-cars, check-images
 ```
-
-Then anywhere in your JSX you can use it like so:
-
-```tsx
-<Link to="/about">About</Link>
-```
-
-This will create a link that will navigate to the `/about` route.
-
-More information on the `Link` component can be found in the [Link documentation](https://tanstack.com/router/v1/docs/framework/react/api/router/linkComponent).
-
-### Using A Layout
-
-In the File Based Routing setup the layout is located in `src/routes/__root.tsx`. Anything you add to the root route will appear in all the routes. The route content will appear in the JSX where you render `{children}` in the `shellComponent`.
-
-Here is an example layout that includes a header:
-
-```tsx
-import { HeadContent, Scripts, createRootRoute } from '@tanstack/react-router'
-
-export const Route = createRootRoute({
-  head: () => ({
-    meta: [
-      { charSet: 'utf-8' },
-      { name: 'viewport', content: 'width=device-width, initial-scale=1' },
-      { title: 'My App' },
-    ],
-  }),
-  shellComponent: ({ children }) => (
-    <html lang="en">
-      <head>
-        <HeadContent />
-      </head>
-      <body>
-        <header>
-          <nav>
-            <Link to="/">Home</Link>
-            <Link to="/about">About</Link>
-          </nav>
-        </header>
-        {children}
-        <Scripts />
-      </body>
-    </html>
-  ),
-})
-```
-
-More information on layouts can be found in the [Layouts documentation](https://tanstack.com/router/latest/docs/framework/react/guide/routing-concepts#layouts).
-
-## Server Functions
-
-TanStack Start provides server functions that allow you to write server-side code that seamlessly integrates with your client components.
-
-```tsx
-import { createServerFn } from '@tanstack/react-start'
-
-const getServerTime = createServerFn({
-  method: 'GET',
-}).handler(async () => {
-  return new Date().toISOString()
-})
-
-// Use in a component
-function MyComponent() {
-  const [time, setTime] = useState('')
-  
-  useEffect(() => {
-    getServerTime().then(setTime)
-  }, [])
-  
-  return <div>Server time: {time}</div>
-}
-```
-
-## API Routes
-
-You can create API routes by using the `server` property in your route definitions:
-
-```tsx
-import { createFileRoute } from '@tanstack/react-router'
-import { json } from '@tanstack/react-start'
-
-export const Route = createFileRoute('/api/hello')({
-  server: {
-    handlers: {
-      GET: () => json({ message: 'Hello, World!' }),
-    },
-  },
-})
-```
-
-## Data Fetching
-
-There are multiple ways to fetch data in your application. You can use TanStack Query to fetch data from a server. But you can also use the `loader` functionality built into TanStack Router to load the data for a route before it's rendered.
-
-For example:
-
-```tsx
-import { createFileRoute } from '@tanstack/react-router'
-
-export const Route = createFileRoute('/people')({
-  loader: async () => {
-    const response = await fetch('https://swapi.dev/api/people')
-    return response.json()
-  },
-  component: PeopleComponent,
-})
-
-function PeopleComponent() {
-  const data = Route.useLoaderData()
-  return (
-    <ul>
-      {data.results.map((person) => (
-        <li key={person.name}>{person.name}</li>
-      ))}
-    </ul>
-  )
-}
-```
-
-Loaders simplify your data fetching logic dramatically. Check out more information in the [Loader documentation](https://tanstack.com/router/latest/docs/framework/react/guide/data-loading#loader-parameters).
-
-# Demo files
-
-Files prefixed with `demo` can be safely deleted. They are there to provide a starting point for you to play around with the features you've installed.
-
-# Learn More
-
-You can learn more about all of the offerings from TanStack in the [TanStack documentation](https://tanstack.com).
-
-For TanStack Start specific documentation, visit [TanStack Start](https://tanstack.com/start).

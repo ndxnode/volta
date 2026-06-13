@@ -6,13 +6,36 @@ import { readFile } from 'node:fs/promises'
 
 const LOCAL_CARS_URL = 'http://localhost:3000/api/cars'
 
+// Wikimedia requires a descriptive User-Agent and rate-limits bursts (429).
+// Throttle politely and retry a 429 once after a pause so this is a reliable gate.
+const HEADERS = {
+  'User-Agent':
+    'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36',
+}
+const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms))
+
+async function headOnce(url) {
+  return fetch(url, { method: 'HEAD', redirect: 'follow', headers: HEADERS })
+}
+
 async function main() {
   const cars = await loadCars()
   const failures = []
 
   for (const car of cars) {
+    if (!car.imageUrl) {
+      console.log(`SKIP ${car.id} (no image — designed fallback)`)
+      continue
+    }
+
     try {
-      const response = await fetch(car.imageUrl, { method: 'HEAD', redirect: 'follow' })
+      let response = await headOnce(car.imageUrl)
+
+      if (response.status === 429) {
+        await sleep(3000)
+        response = await headOnce(car.imageUrl)
+      }
+
       const status = response.status
 
       console.log(`${status} ${car.id} ${car.imageUrl}`)
@@ -27,6 +50,8 @@ async function main() {
       console.error(failure)
       failures.push(failure)
     }
+
+    await sleep(120)
   }
 
   if (failures.length) {

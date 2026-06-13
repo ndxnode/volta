@@ -9,13 +9,43 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as StatsRouteImport } from './routes/stats'
+import { Route as FavoritesRouteImport } from './routes/favorites'
+import { Route as CompareRouteImport } from './routes/compare'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as CarsIndexRouteImport } from './routes/cars/index'
+import { Route as CarsIdRouteImport } from './routes/cars/$id'
 import { Route as ApiCarsRouteImport } from './routes/api/cars'
 import { Route as ApiCarsIdRouteImport } from './routes/api/cars.$id'
 
+const StatsRoute = StatsRouteImport.update({
+  id: '/stats',
+  path: '/stats',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const FavoritesRoute = FavoritesRouteImport.update({
+  id: '/favorites',
+  path: '/favorites',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CompareRoute = CompareRouteImport.update({
+  id: '/compare',
+  path: '/compare',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CarsIndexRoute = CarsIndexRouteImport.update({
+  id: '/cars/',
+  path: '/cars/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CarsIdRoute = CarsIdRouteImport.update({
+  id: '/cars/$id',
+  path: '/cars/$id',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiCarsRoute = ApiCarsRouteImport.update({
@@ -31,40 +61,120 @@ const ApiCarsIdRoute = ApiCarsIdRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/compare': typeof CompareRoute
+  '/favorites': typeof FavoritesRoute
+  '/stats': typeof StatsRoute
   '/api/cars': typeof ApiCarsRouteWithChildren
+  '/cars/$id': typeof CarsIdRoute
+  '/cars/': typeof CarsIndexRoute
   '/api/cars/$id': typeof ApiCarsIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/compare': typeof CompareRoute
+  '/favorites': typeof FavoritesRoute
+  '/stats': typeof StatsRoute
   '/api/cars': typeof ApiCarsRouteWithChildren
+  '/cars/$id': typeof CarsIdRoute
+  '/cars': typeof CarsIndexRoute
   '/api/cars/$id': typeof ApiCarsIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/compare': typeof CompareRoute
+  '/favorites': typeof FavoritesRoute
+  '/stats': typeof StatsRoute
   '/api/cars': typeof ApiCarsRouteWithChildren
+  '/cars/$id': typeof CarsIdRoute
+  '/cars/': typeof CarsIndexRoute
   '/api/cars/$id': typeof ApiCarsIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/api/cars' | '/api/cars/$id'
+  fullPaths:
+    | '/'
+    | '/compare'
+    | '/favorites'
+    | '/stats'
+    | '/api/cars'
+    | '/cars/$id'
+    | '/cars/'
+    | '/api/cars/$id'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/api/cars' | '/api/cars/$id'
-  id: '__root__' | '/' | '/api/cars' | '/api/cars/$id'
+  to:
+    | '/'
+    | '/compare'
+    | '/favorites'
+    | '/stats'
+    | '/api/cars'
+    | '/cars/$id'
+    | '/cars'
+    | '/api/cars/$id'
+  id:
+    | '__root__'
+    | '/'
+    | '/compare'
+    | '/favorites'
+    | '/stats'
+    | '/api/cars'
+    | '/cars/$id'
+    | '/cars/'
+    | '/api/cars/$id'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  CompareRoute: typeof CompareRoute
+  FavoritesRoute: typeof FavoritesRoute
+  StatsRoute: typeof StatsRoute
   ApiCarsRoute: typeof ApiCarsRouteWithChildren
+  CarsIdRoute: typeof CarsIdRoute
+  CarsIndexRoute: typeof CarsIndexRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/stats': {
+      id: '/stats'
+      path: '/stats'
+      fullPath: '/stats'
+      preLoaderRoute: typeof StatsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/favorites': {
+      id: '/favorites'
+      path: '/favorites'
+      fullPath: '/favorites'
+      preLoaderRoute: typeof FavoritesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/compare': {
+      id: '/compare'
+      path: '/compare'
+      fullPath: '/compare'
+      preLoaderRoute: typeof CompareRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
       id: '/'
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/cars/': {
+      id: '/cars/'
+      path: '/cars'
+      fullPath: '/cars/'
+      preLoaderRoute: typeof CarsIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/cars/$id': {
+      id: '/cars/$id'
+      path: '/cars/$id'
+      fullPath: '/cars/$id'
+      preLoaderRoute: typeof CarsIdRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/cars': {
@@ -97,7 +207,12 @@ const ApiCarsRouteWithChildren =
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  CompareRoute: CompareRoute,
+  FavoritesRoute: FavoritesRoute,
+  StatsRoute: StatsRoute,
   ApiCarsRoute: ApiCarsRouteWithChildren,
+  CarsIdRoute: CarsIdRoute,
+  CarsIndexRoute: CarsIndexRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

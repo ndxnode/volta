@@ -29,8 +29,9 @@ export const CarSchema = z.object({
   imageUrl: z
     .string()
     .url()
-    .refine((value) => value.startsWith('https://upload.wikimedia.org/')),
-  imageAttribution: z.string().min(1),
+    .refine((value) => value.startsWith('https://upload.wikimedia.org/'))
+    .nullable(),
+  imageAttribution: z.string().min(1).nullable(),
   accentColor: z.string().regex(/^#[0-9a-fA-F]{6}$/),
 })
 

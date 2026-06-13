@@ -6,7 +6,7 @@ import {
 } from '@tanstack/react-router'
 import { TanStackRouterDevtoolsPanel } from '@tanstack/react-router-devtools'
 import { TanStackDevtools } from '@tanstack/react-devtools'
-import { MotionConfig } from 'motion/react'
+import { LazyMotion, MotionConfig, domAnimation } from 'motion/react'
 
 import TanStackQueryDevtools from '../integrations/tanstack-query/devtools'
 
@@ -31,7 +31,7 @@ interface MyRouterContext {
 
 const SITE_TITLE = 'VOLTA — Electric Car Index'
 const SITE_DESCRIPTION =
-  'VOLTA is an elegant electric-car index: browse, compare, and explore specs across 1,000+ EVs in a sci-fi showroom.'
+  'VOLTA is an elegant electric-car index: browse, compare, and explore specs across 100+ EVs in a sci-fi showroom.'
 
 export const Route = createRootRouteWithContext<MyRouterContext>()({
   head: () => ({
@@ -56,18 +56,20 @@ export const Route = createRootRouteWithContext<MyRouterContext>()({
 
 function RootLayout() {
   return (
-    <MotionConfig reducedMotion="user">
-      <div className="relative flex min-h-screen flex-col">
-        <SiteHeader />
-        <main className="flex-1">
-          <Outlet />
-        </main>
-        <SiteFooter />
-      </div>
-      <CommandPalette />
-      <CompareTray />
-      <Toaster theme="dark" position="bottom-right" />
-    </MotionConfig>
+    <LazyMotion features={domAnimation}>
+      <MotionConfig reducedMotion="user">
+        <div className="relative flex min-h-screen flex-col">
+          <SiteHeader />
+          <main className="flex-1">
+            <Outlet />
+          </main>
+          <SiteFooter />
+        </div>
+        <CommandPalette />
+        <CompareTray />
+        <Toaster theme="dark" position="bottom-right" />
+      </MotionConfig>
+    </LazyMotion>
   )
 }
 

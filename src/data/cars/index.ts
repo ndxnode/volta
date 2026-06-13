@@ -1,17 +1,27 @@
 import { CarSchema, type Car } from '../../lib/car-schema'
 import { tesla } from './tesla'
+import { hyundaiKiaGenesis } from './hyundai-kia-genesis'
+import { bmwMini } from './bmw-mini'
+import { mercedesSmart } from './mercedes-smart'
+import { audiPorsche } from './audi-porsche'
+import { vwGroup } from './vw-group'
+import { fordGm } from './ford-gm'
+import { startups } from './startups'
+import { japan } from './japan'
+import { chinaEurope } from './china-europe'
 
-// import { hyundaiKiaGenesis } from './hyundai-kia-genesis'
-// import { bmwMini } from './bmw-mini'
-// import { mercedesSmart } from './mercedes-smart'
-// import { audiPorsche } from './audi-porsche'
-// import { vwGroup } from './vw-group'
-// import { fordGm } from './ford-gm'
-// import { startups } from './startups'
-// import { japan } from './japan'
-// import { chinaEurope } from './china-europe'
-
-const all = [...tesla]
+const all = [
+  ...tesla,
+  ...hyundaiKiaGenesis,
+  ...bmwMini,
+  ...mercedesSmart,
+  ...audiPorsche,
+  ...vwGroup,
+  ...fordGm,
+  ...startups,
+  ...japan,
+  ...chinaEurope,
+]
 const ids = new Set<string>()
 
 for (const car of all) {
