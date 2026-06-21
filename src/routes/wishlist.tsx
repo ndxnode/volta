@@ -124,15 +124,31 @@ function WishlistPage() {
                     )}
 
                     <div className="mt-auto flex items-center gap-2 pt-1">
-                      <Button asChild size="sm" disabled={cars.length < 2} data-icon="inline-start">
-                        <Link
-                          to={'/compare' as LinkProps['to']}
-                          search={{ cars: set.carIds } as LinkProps['search']}
+                      {/* `disabled` has no effect on an <a>, so a set with fewer
+                          than two resolvable cars (compare's minimum) renders a
+                          real disabled <button> instead of a clickable link that
+                          would dead-end on the "Add cars to compare" state. */}
+                      {cars.length < 2 ? (
+                        <Button
+                          type="button"
+                          size="sm"
+                          disabled
+                          data-icon="inline-start"
                         >
                           <GitCompareArrows aria-hidden />
                           Open compare
-                        </Link>
-                      </Button>
+                        </Button>
+                      ) : (
+                        <Button asChild size="sm" data-icon="inline-start">
+                          <Link
+                            to={'/compare' as LinkProps['to']}
+                            search={{ cars: set.carIds } as LinkProps['search']}
+                          >
+                            <GitCompareArrows aria-hidden />
+                            Open compare
+                          </Link>
+                        </Button>
+                      )}
                       <Button
                         type="button"
                         variant="destructive"
