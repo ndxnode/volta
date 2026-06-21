@@ -84,6 +84,15 @@ describe('estimateCostPerMile', () => {
       estimateCostPerMile(makeCar({ efficiencyWhPerMi: 600 })),
     )
   })
+
+  test('scales with electricity price (higher $/kWh = strictly higher $/mi), so the /compare Price / kWh input tunes the cost rows up', () => {
+    // The /compare inputs thread pricePerKwh positionally into estimateCostPerMile;
+    // a pricier kWh must yield a strictly higher per-mile cost for the same car.
+    const car = makeCar({ efficiencyWhPerMi: 250 })
+    expect(estimateCostPerMile(car, 0.1)).toBeLessThan(
+      estimateCostPerMile(car, 0.3),
+    )
+  })
 })
 
 describe('formatCostPerMile', () => {

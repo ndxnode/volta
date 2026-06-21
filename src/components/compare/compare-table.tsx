@@ -24,6 +24,7 @@ import {
   formatAnnualCost,
   formatCostPerMile,
 } from '@/lib/running-cost'
+import type { RunningCostInputs } from '@/lib/quiz-search'
 import { Button } from '@/components/ui/button'
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group'
 import {
@@ -63,7 +64,13 @@ function dash(value: number | null): string {
 
 // Four typed groups mapped onto existing Car fields (no schema change). Name is
 // rendered as the column header, not a ranked row, so it is intentionally absent.
-const SPEC_CATEGORIES: SpecCategory[] = [
+//
+// A FACTORY (not a static const) so the two running-cost rows can read the
+// user's own miles/year + $/kWh from /compare's inputs. Everything except the
+// two cost rows is independent of `costInputs`; those two thread the inputs
+// positionally into the helpers (undefined falls back to the 12k/$0.17 defaults).
+function buildSpecCategories(costInputs: RunningCostInputs): SpecCategory[] {
+  return [
   {
     id: 'range',
     label: 'Range',
@@ -112,40 +119,54 @@ const SPEC_CATEGORIES: SpecCategory[] = [
       },
       // Derived running-cost lens, co-located with the energy/charging specs.
       // The best-in-row highlight ranks RAW Car fields via bestIndexFor, so this
-      // row is keyed on 'efficiencyWhPerMi' (direction 'lower'): with the uniform
-      // 12k mi / $0.17 defaults, estimateAnnualEnergyCost is strictly monotonic in
-      // efficiency, so ranking by efficiency picks the exact same winner(s) as
-      // ranking by cost — correct highlight, no change to bestIndexFor. (Sharing
-      // the 'efficiencyWhPerMi' key with the 'Efficiency' row is fine: winnersByRow
-      // is keyed by the unique row.label, not by key.)
+      // row is keyed on 'efficiencyWhPerMi' (direction 'lower'): scaling by the
+      // user's miles/year + $/kWh (or the 12k/$0.17 defaults when unset) is a
+      // positive monotonic transform of efficiency, so ranking by efficiency picks
+      // the exact same winner(s) as ranking by cost — correct highlight, no change
+      // to bestIndexFor. (Sharing the 'efficiencyWhPerMi' key with the 'Efficiency'
+      // row is fine: winnersByRow is keyed by the unique row.label, not by key.)
       //
-      // YOUR TURN (user, ~5-10 lines): thread real miles/$ inputs into /compare so
-      // this column reflects the user's own driving instead of the 12k/$0.17
-      // defaults. Add a number-input pair (like /quiz already has — see
-      // runningCostFromSearch/runningCostToSearch in quiz-search.ts) and pass the
-      // values positionally: formatAnnualCost(estimateAnnualEnergyCost(car, miles,
-      // price)). For now it uses the helper defaults. This SHARED gap also governs
-      // the 'Cost / mi' row below — wiring the inputs should thread `price` into
-      // estimateCostPerMile(car, price) too, so BOTH cost rows reflect the user.
+      // IMPLEMENTED: this row now reads `costInputs` (milesPerYear / pricePerKwh)
+      // from the /compare inputs row, threaded positionally into the helper —
+      // undefined falls back to the helper's 12k mi / $0.17 defaults cleanly.
       {
         key: 'efficiencyWhPerMi',
         label: 'Cost / yr',
         direction: 'lower',
-        format: (car) => formatAnnualCost(estimateAnnualEnergyCost(car)),
-        csv: (car) => formatAnnualCost(estimateAnnualEnergyCost(car)),
+        format: (car) =>
+          formatAnnualCost(
+            estimateAnnualEnergyCost(
+              car,
+              costInputs.milesPerYear,
+              costInputs.pricePerKwh,
+            ),
+          ),
+        csv: (car) =>
+          formatAnnualCost(
+            estimateAnnualEnergyCost(
+              car,
+              costInputs.milesPerYear,
+              costInputs.pricePerKwh,
+            ),
+          ),
       },
       // Per-mile running-cost companion, mirroring the detail page's two cost rows.
       // Also keyed on 'efficiencyWhPerMi' (direction 'lower'): estimateCostPerMile
-      // is UNrounded and strictly increasing in efficiency under the $0.17 default,
+      // is UNrounded and strictly increasing in efficiency under any fixed $/kWh,
       // so the efficiency winner is exactly the $/mi winner — correct highlight with
       // no change to bestIndexFor. (Three rows now share this key; winnersByRow is a
       // Map keyed by unique row.label, so each computes its own winner set.)
+      //
+      // IMPLEMENTED: reads `costInputs.pricePerKwh` from the /compare inputs row
+      // (undefined falls back to the helper's $0.17 default).
       {
         key: 'efficiencyWhPerMi',
         label: 'Cost / mi',
         direction: 'lower',
-        format: (car) => formatCostPerMile(estimateCostPerMile(car)),
-        csv: (car) => formatCostPerMile(estimateCostPerMile(car)),
+        format: (car) =>
+          formatCostPerMile(estimateCostPerMile(car, costInputs.pricePerKwh)),
+        csv: (car) =>
+          formatCostPerMile(estimateCostPerMile(car, costInputs.pricePerKwh)),
       },
     ],
   },
@@ -211,9 +232,12 @@ const SPEC_CATEGORIES: SpecCategory[] = [
       },
     ],
   },
-]
+  ]
+}
 
-const ALL_CATEGORY_IDS = SPEC_CATEGORIES.map((category) => category.id)
+// Category ids are independent of costInputs (only the two cost ROWS vary), so
+// this stays a stable static const — safe for the initial toggle useState.
+const ALL_CATEGORY_IDS = ['range', 'charging', 'performance', 'dimensions']
 
 /**
  * Pure helper: returns the indices of the winning car(s) for a spec.
@@ -281,6 +305,12 @@ interface CompareTableProps {
   cars: Car[]
   /** Removes a car from the comparison (also clears it from the store). */
   onRemove: (id: string) => void
+  /**
+   * User's miles/year + $/kWh from the /compare inputs row. Threads into the two
+   * running-cost rows; defaults to `{}` so the cost helpers fall back to their
+   * 12k mi / $0.17 defaults for callers that don't pass it.
+   */
+  costInputs?: RunningCostInputs
 }
 
 /**
@@ -291,14 +321,25 @@ interface CompareTableProps {
  * Desktop: a single table. Mobile: stacked per-car cards driven by the same
  * categories + bestIndexFor logic.
  */
-export function CompareTable({ cars, onRemove }: CompareTableProps) {
+export function CompareTable({
+  cars,
+  onRemove,
+  costInputs = {},
+}: CompareTableProps) {
   const [activeCategories, setActiveCategories] =
     React.useState<string[]>(ALL_CATEGORY_IDS)
 
+  // Rebuild the spec categories whenever the cost inputs change so the two
+  // running-cost rows reflect the user's own driving.
+  const specCategories = React.useMemo(
+    () => buildSpecCategories(costInputs),
+    [costInputs],
+  )
+
   // Only render categories that are toggled on, preserving canonical order.
   const visibleCategories = React.useMemo(
-    () => SPEC_CATEGORIES.filter((category) => activeCategories.includes(category.id)),
-    [activeCategories],
+    () => specCategories.filter((category) => activeCategories.includes(category.id)),
+    [specCategories, activeCategories],
   )
 
   // Precompute winners once per render — keyed by spec label.
@@ -337,7 +378,7 @@ export function CompareTable({ cars, onRemove }: CompareTableProps) {
           onValueChange={handleToggleCategories}
           aria-label="Toggle spec categories"
         >
-          {SPEC_CATEGORIES.map((category) => (
+          {specCategories.map((category) => (
             <ToggleGroupItem key={category.id} value={category.id}>
               {category.label}
             </ToggleGroupItem>
