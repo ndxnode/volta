@@ -1,12 +1,13 @@
-import { useState } from 'react'
-import { createFileRoute, Link } from '@tanstack/react-router'
+import { createFileRoute, Link, useNavigate } from '@tanstack/react-router'
 import { Sparkles } from 'lucide-react'
+import { z } from 'zod'
 
 import type { Car } from '@/lib/car-schema'
 import { BodyStyle } from '@/lib/car-schema'
 import { carsQueryOptions } from '@/lib/queries'
 import { MAX_COMPARE_IDS } from '@/lib/compare-config'
 import { matchBlurb, rankCars, type QuizPrefs } from '@/lib/ev-quiz'
+import { quizPrefsFromSearch, quizPrefsToSearch } from '@/lib/quiz-search'
 import { useSuspenseQuery } from '@tanstack/react-query'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -21,7 +22,18 @@ import {
 import { PageHeader } from '@/components/shared/page-header'
 import { GlassCard } from '@/components/shared/glass-card'
 
+const quizSearchSchema = z.object({
+  // Persist quiz prefs to the URL so a ranked result is shareable +
+  // back-button friendly. `.catch(undefined)` keeps a hand-edited / bad URL
+  // from throwing (same resilience posture as compareSearchSchema's `.catch`).
+  budget: z.coerce.number().positive().optional().catch(undefined),
+  minRange: z.coerce.number().positive().optional().catch(undefined),
+  body: z.enum(BodyStyle.options).optional().catch(undefined),
+  seats: z.coerce.number().positive().optional().catch(undefined),
+})
+
 export const Route = createFileRoute('/quiz')({
+  validateSearch: quizSearchSchema,
   loader: async ({ context }) => {
     await context.queryClient.ensureQueryData(carsQueryOptions())
   },
@@ -40,19 +52,28 @@ const priceFmt = new Intl.NumberFormat('en-US', {
 
 function QuizPage() {
   const { data: allCars } = useSuspenseQuery(carsQueryOptions())
+  const search = Route.useSearch()
+  const navigate = useNavigate()
 
-  // Local UI state. Empty string = "no preference set" -> omitted from prefs.
-  const [maxPrice, setMaxPrice] = useState('')
-  const [minRange, setMinRange] = useState('')
-  const [bodyStyle, setBodyStyle] = useState<string>(ANY)
-  const [minSeats, setMinSeats] = useState<string>(ANY)
+  // Prefs live in the URL (shareable + back-button friendly). Derive them via
+  // the pure quiz-search bridge so junk in the URL can't poison scoring.
+  const prefs = quizPrefsFromSearch(search)
 
-  const prefs: QuizPrefs = {
-    maxPriceUsd: maxPrice ? Number(maxPrice) : undefined,
-    minRangeMi: minRange ? Number(minRange) : undefined,
-    bodyStyle:
-      bodyStyle === ANY ? undefined : (bodyStyle as Car['bodyStyle']),
-    minSeats: minSeats === ANY ? undefined : Number(minSeats),
+  // Displayed input values come straight from the search-derived prefs.
+  // Empty string = "no preference set"; ANY = the Select's "no pref" sentinel.
+  const maxPrice = prefs.maxPriceUsd !== undefined ? String(prefs.maxPriceUsd) : ''
+  const minRange = prefs.minRangeMi !== undefined ? String(prefs.minRangeMi) : ''
+  const bodyStyle = prefs.bodyStyle ?? ANY
+  const minSeats = prefs.minSeats !== undefined ? String(prefs.minSeats) : ANY
+
+  // Write the next prefs back to the URL. `replace: true` (like compare's
+  // handleRemove) so typing doesn't spam the history stack.
+  function applyPrefs(nextPrefs: QuizPrefs) {
+    void navigate({
+      to: '/quiz',
+      search: quizPrefsToSearch(nextPrefs),
+      replace: true,
+    })
   }
 
   const ranked = rankCars(allCars, prefs)
@@ -80,7 +101,14 @@ function QuizPage() {
               step={1000}
               placeholder="No limit"
               value={maxPrice}
-              onChange={(event) => setMaxPrice(event.target.value)}
+              onChange={(event) =>
+                applyPrefs({
+                  ...prefs,
+                  maxPriceUsd: event.target.value
+                    ? Number(event.target.value)
+                    : undefined,
+                })
+              }
             />
           </div>
 
@@ -94,13 +122,29 @@ function QuizPage() {
               step={10}
               placeholder="Any range"
               value={minRange}
-              onChange={(event) => setMinRange(event.target.value)}
+              onChange={(event) =>
+                applyPrefs({
+                  ...prefs,
+                  minRangeMi: event.target.value
+                    ? Number(event.target.value)
+                    : undefined,
+                })
+              }
             />
           </div>
 
           <div className="space-y-2">
             <Label htmlFor="quiz-body-style">Body style</Label>
-            <Select value={bodyStyle} onValueChange={setBodyStyle}>
+            <Select
+              value={bodyStyle}
+              onValueChange={(value) =>
+                applyPrefs({
+                  ...prefs,
+                  bodyStyle:
+                    value === ANY ? undefined : (value as Car['bodyStyle']),
+                })
+              }
+            >
               <SelectTrigger id="quiz-body-style" className="w-full">
                 <SelectValue />
               </SelectTrigger>
@@ -117,7 +161,15 @@ function QuizPage() {
 
           <div className="space-y-2">
             <Label htmlFor="quiz-min-seats">Min seats</Label>
-            <Select value={minSeats} onValueChange={setMinSeats}>
+            <Select
+              value={minSeats}
+              onValueChange={(value) =>
+                applyPrefs({
+                  ...prefs,
+                  minSeats: value === ANY ? undefined : Number(value),
+                })
+              }
+            >
               <SelectTrigger id="quiz-min-seats" className="w-full">
                 <SelectValue />
               </SelectTrigger>
