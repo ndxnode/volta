@@ -6,6 +6,7 @@ import { z } from 'zod'
 
 import type { Car } from '@/lib/car-schema'
 import { carsQueryOptions } from '@/lib/queries'
+import { resolveDeepLinkCars } from '@/lib/compare-config'
 import { useCompare } from '@/hooks/use-compare'
 import { Button } from '@/components/ui/button'
 import { PageHeader } from '@/components/shared/page-header'
@@ -43,9 +44,8 @@ function ComparePage() {
   const byId = new Map(allCars.map((car) => [car.id, car] as const))
 
   // Deep link wins when it carries valid ids; otherwise fall back to the store.
-  const deepLinkCars = searchIds
-    .map((id) => byId.get(id))
-    .filter((car): car is Car => Boolean(car))
+  // Cap at MAX_COMPARE_IDS so a long ?cars= link can't render extra columns.
+  const deepLinkCars = resolveDeepLinkCars(searchIds, byId)
 
   const usingDeepLink = deepLinkCars.length > 0
 
