@@ -6,6 +6,7 @@ import { m } from 'motion/react'
 import type { Car } from '@/lib/car-schema'
 import { carsQueryOptions } from '@/lib/queries'
 import { formatPrice } from '@/lib/format'
+import { fleetSummary } from '@/lib/fleet-summary'
 import { PageHeader } from '@/components/shared/page-header'
 import { GlassCard } from '@/components/shared/glass-card'
 import { AnimatedNumber } from '@/components/shared/animated-number'
@@ -63,6 +64,7 @@ function computeHeadlines(cars: Car[]): Headline[] {
 function StatsPage() {
   const { data: cars } = useSuspenseQuery(carsQueryOptions())
   const headlines = React.useMemo(() => computeHeadlines(cars), [cars])
+  const summary = React.useMemo(() => fleetSummary(cars), [cars])
 
   return (
     <div className="mx-auto w-full max-w-6xl space-y-10 px-4 py-8 sm:px-6 lg:py-12">
@@ -71,6 +73,10 @@ function StatsPage() {
         title="Showroom analytics"
         subtitle="The fleet at a glance — range, value, battery and efficiency across every model on the floor."
       />
+
+      <p className="font-mono text-sm text-muted-foreground tabular-nums">
+        {summary}
+      </p>
 
       {/* Headline stat tiles */}
       <m.div
