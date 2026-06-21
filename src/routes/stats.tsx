@@ -14,6 +14,7 @@ import { RangePriceScatter } from '@/components/charts/range-price-scatter'
 import { BatteryByBrand } from '@/components/charts/battery-by-brand'
 import { EfficiencyLeaders } from '@/components/charts/efficiency-leaders'
 import { BodyStyleBar } from '@/components/charts/body-style-bar'
+import { DrivetrainBar } from '@/components/charts/drivetrain-bar'
 
 export const Route = createFileRoute('/stats')({
   loader: async ({ context }) => {
@@ -131,6 +132,15 @@ function StatsPage() {
         bodyHeight={420}
       >
         <BodyStyleBar cars={cars} />
+      </ChartCard>
+
+      {/* Drivetrain mix — full width, like the scatter */}
+      <ChartCard
+        title="Drivetrain mix"
+        subtitle="How the floor splits across rear-, all- and front-wheel-drive setups."
+        bodyHeight={420}
+      >
+        <DrivetrainBar cars={cars} />
       </ChartCard>
     </div>
   )
