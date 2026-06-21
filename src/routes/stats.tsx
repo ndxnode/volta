@@ -16,6 +16,7 @@ import { EfficiencyLeaders } from '@/components/charts/efficiency-leaders'
 import { BodyStyleBar } from '@/components/charts/body-style-bar'
 import { DrivetrainBar } from '@/components/charts/drivetrain-bar'
 import { PriceBandBar } from '@/components/charts/price-band-bar'
+import { SeatsBar } from '@/components/charts/seats-bar'
 
 export const Route = createFileRoute('/stats')({
   loader: async ({ context }) => {
@@ -151,6 +152,15 @@ function StatsPage() {
         bodyHeight={420}
       >
         <PriceBandBar cars={cars} />
+      </ChartCard>
+
+      {/* Seat counts — full width, like the scatter */}
+      <ChartCard
+        title="Seat counts"
+        subtitle="How the floor splits across two-seat sports cars, five-seat mainstays and seven-/eight-seat haulers."
+        bodyHeight={420}
+      >
+        <SeatsBar cars={cars} />
       </ChartCard>
     </div>
   )
