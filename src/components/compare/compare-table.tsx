@@ -18,7 +18,12 @@ import {
   serializeCompareCsv,
   type CompareCsvRow,
 } from '@/lib/compare-csv'
-import { estimateAnnualEnergyCost, formatAnnualCost } from '@/lib/running-cost'
+import {
+  estimateAnnualEnergyCost,
+  estimateCostPerMile,
+  formatAnnualCost,
+  formatCostPerMile,
+} from '@/lib/running-cost'
 import { Button } from '@/components/ui/button'
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group'
 import {
@@ -119,13 +124,28 @@ const SPEC_CATEGORIES: SpecCategory[] = [
       // defaults. Add a number-input pair (like /quiz already has — see
       // runningCostFromSearch/runningCostToSearch in quiz-search.ts) and pass the
       // values positionally: formatAnnualCost(estimateAnnualEnergyCost(car, miles,
-      // price)). For now it uses the helper defaults.
+      // price)). For now it uses the helper defaults. This SHARED gap also governs
+      // the 'Cost / mi' row below — wiring the inputs should thread `price` into
+      // estimateCostPerMile(car, price) too, so BOTH cost rows reflect the user.
       {
         key: 'efficiencyWhPerMi',
         label: 'Cost / yr',
         direction: 'lower',
         format: (car) => formatAnnualCost(estimateAnnualEnergyCost(car)),
         csv: (car) => formatAnnualCost(estimateAnnualEnergyCost(car)),
+      },
+      // Per-mile running-cost companion, mirroring the detail page's two cost rows.
+      // Also keyed on 'efficiencyWhPerMi' (direction 'lower'): estimateCostPerMile
+      // is UNrounded and strictly increasing in efficiency under the $0.17 default,
+      // so the efficiency winner is exactly the $/mi winner — correct highlight with
+      // no change to bestIndexFor. (Three rows now share this key; winnersByRow is a
+      // Map keyed by unique row.label, so each computes its own winner set.)
+      {
+        key: 'efficiencyWhPerMi',
+        label: 'Cost / mi',
+        direction: 'lower',
+        format: (car) => formatCostPerMile(estimateCostPerMile(car)),
+        csv: (car) => formatCostPerMile(estimateCostPerMile(car)),
       },
     ],
   },

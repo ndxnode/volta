@@ -78,6 +78,12 @@ describe('estimateCostPerMile', () => {
   test('is positive', () => {
     expect(estimateCostPerMile(makeCar({ efficiencyWhPerMi: 250 }))).toBeGreaterThan(0)
   })
+
+  test('is monotonic in efficiency (lower Wh/mi = lower $/mi), so the /compare "Cost / mi" lower-is-better highlight keyed on efficiencyWhPerMi tracks $/mi exactly', () => {
+    expect(estimateCostPerMile(makeCar({ efficiencyWhPerMi: 180 }))).toBeLessThan(
+      estimateCostPerMile(makeCar({ efficiencyWhPerMi: 600 })),
+    )
+  })
 })
 
 describe('formatCostPerMile', () => {
