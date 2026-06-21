@@ -15,6 +15,7 @@ import { BatteryByBrand } from '@/components/charts/battery-by-brand'
 import { EfficiencyLeaders } from '@/components/charts/efficiency-leaders'
 import { BodyStyleBar } from '@/components/charts/body-style-bar'
 import { DrivetrainBar } from '@/components/charts/drivetrain-bar'
+import { PriceBandBar } from '@/components/charts/price-band-bar'
 
 export const Route = createFileRoute('/stats')({
   loader: async ({ context }) => {
@@ -141,6 +142,15 @@ function StatsPage() {
         bodyHeight={420}
       >
         <DrivetrainBar cars={cars} />
+      </ChartCard>
+
+      {/* Price bands — full width, like the scatter */}
+      <ChartCard
+        title="Price bands"
+        subtitle="How the floor spreads across price tiers, from sub-$40k to the $80k-plus flagships."
+        bodyHeight={420}
+      >
+        <PriceBandBar cars={cars} />
       </ChartCard>
     </div>
   )
