@@ -1,6 +1,7 @@
 import * as React from 'react'
 
 import type { Car } from '@/lib/car-schema'
+import { connectorNote, estimateDcFastChargeMinutes, formatChargeWindow } from '@/lib/charge-time'
 import {
   formatBattery,
   formatEfficiency,
@@ -48,6 +49,8 @@ function buildSections(car: Car): SpecSection[] {
           value: car.batteryNetKwh == null ? DASH : formatBattery(car.batteryNetKwh),
         },
         { label: 'DC charge', value: `${integer.format(car.maxDcChargeKw)} kW` },
+        { label: '10–80% DC', value: formatChargeWindow(estimateDcFastChargeMinutes(car)) },
+        { label: 'Connector', value: connectorNote(car) },
         { label: 'Efficiency', value: formatEfficiency(car.efficiencyWhPerMi) },
       ],
     },
