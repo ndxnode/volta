@@ -110,22 +110,51 @@ export function rankCars(cars: Car[], prefs: QuizPrefs): Car[] {
 }
 
 /**
- * A short, human sentence explaining *why* a car matched the prefs, shown under
- * each /quiz result.
- *
- * YOUR TURN (user, ~5-10 lines): replace the single generic fallback below with
- * a per-result, prefs-aware sentence built from `car` + `prefs`. Ideas:
- *   - under budget:   `prefs.maxPriceUsd && car.priceUsd <= prefs.maxPriceUsd`
- *                     -> `$X under your budget`
- *   - range headroom: `prefs.minRangeMi`
- *                     -> `${car.rangeMi - prefs.minRangeMi} mi over your range floor`
- *   - seats:          `prefs.minSeats && car.seats >= prefs.minSeats`
- *                     -> `seats ${car.seats}`
- *   - body match:     `car.bodyStyle === prefs.bodyStyle` -> `${car.bodyStyle} you wanted`
- * Join the parts that apply with `' · '`. Keep it a pure string return so it
- * stays unit-testable; fall back to the generic line when no pref is set. The
- * fallback below keeps the build green until you wire the real copy.
+ * Generic fallback shown when no SET preference is satisfied (e.g. an empty `{}`
+ * prefs object, or a car that misses every criterion the user pinned). Keeps the
+ * /quiz result line non-blank instead of rendering an empty string.
  */
-export function matchBlurb(_car: Car, _prefs: QuizPrefs): string {
-  return 'Top pick for your preferences'
+const GENERIC_BLURB = 'Top pick for your preferences'
+
+/**
+ * A short, human sentence explaining *why* a car matched the prefs, shown under
+ * each /quiz result. PURE: builds one clause per SET preference the car actually
+ * satisfies, joins them with `' · '`, and falls back to `GENERIC_BLURB` when no
+ * clause applies. Mirrors `scoreCar`'s `=== undefined` guards so an empty `{}`
+ * never throws, and skips a clause (rather than emitting a negative) whenever the
+ * car falls short of a set floor — so it never reports "negative headroom" or
+ * dollars "under budget" for a car that's actually over.
+ *
+ *   - under budget:   car at/under `maxPriceUsd` -> `$X under budget`
+ *   - range headroom: car at/above `minRangeMi`  -> `Y mi of range headroom`
+ *   - seats:          car at/above `minSeats`     -> `seats Z`
+ *   - body match:     car.bodyStyle === pref      -> `<bodyStyle> you wanted`
+ *
+ * YOUR TURN (user, ~5 lines): add an EFFICIENCY clause to the `clauses` array —
+ * push `` `${car.efficiencyWhPerMi} Wh/mi efficient` `` when
+ * `car.efficiencyWhPerMi <= EFFICIENT_WH_PER_MI` (add a doc'd module const
+ * `EFFICIENT_WH_PER_MI = 280`), so the blurb also rewards frugal cars. Keep it a
+ * pure push into the same array — no new param, no DOM — and it composes into the
+ * `' · '` join for free.
+ */
+export function matchBlurb(car: Car, prefs: QuizPrefs): string {
+  const clauses: string[] = []
+
+  if (prefs.maxPriceUsd !== undefined && car.priceUsd <= prefs.maxPriceUsd) {
+    clauses.push(`$${(prefs.maxPriceUsd - car.priceUsd).toLocaleString('en-US')} under budget`)
+  }
+  if (prefs.minRangeMi !== undefined && car.rangeMi >= prefs.minRangeMi) {
+    clauses.push(`${car.rangeMi - prefs.minRangeMi} mi of range headroom`)
+  }
+  if (prefs.minSeats !== undefined && car.seats >= prefs.minSeats) {
+    clauses.push(`seats ${car.seats}`)
+  }
+  if (prefs.bodyStyle !== undefined && car.bodyStyle === prefs.bodyStyle) {
+    clauses.push(`${car.bodyStyle} you wanted`)
+  }
+
+  // YOUR TURN: see the doc-comment above — push an `EFFICIENT_WH_PER_MI`-gated
+  // efficiency clause here so frugal cars get called out too.
+
+  return clauses.length > 0 ? clauses.join(' · ') : GENERIC_BLURB
 }

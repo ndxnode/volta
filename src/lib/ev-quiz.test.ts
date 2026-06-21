@@ -117,8 +117,58 @@ describe('rankCars', () => {
   })
 })
 
-describe('matchBlurb (YOUR TURN stub)', () => {
-  test('returns a non-empty fallback string', () => {
-    expect(matchBlurb(makeCar({}), {}).length).toBeGreaterThan(0)
+describe('matchBlurb', () => {
+  // Fixture defaults: sedan, priceUsd 47_490, rangeMi 346, seats 5.
+
+  test('empty prefs ({}) returns the generic, non-empty fallback (no throw)', () => {
+    const blurb = matchBlurb(makeCar({}), {})
+    expect(blurb).toBe('Top pick for your preferences')
+    expect(blurb.length).toBeGreaterThan(0)
+  })
+
+  test('a car under budget reports the formatted dollar delta', () => {
+    const blurb = matchBlurb(makeCar({}), { maxPriceUsd: 60_000 })
+    expect(blurb).toContain('under budget')
+    // 60_000 - 47_490 = 12_510, formatted with a thousands separator.
+    expect(blurb).toContain('$12,510')
+  })
+
+  test('a car OVER budget skips the clause (no negative dollars) and falls back', () => {
+    const blurb = matchBlurb(makeCar({}), { maxPriceUsd: 40_000 })
+    expect(blurb).not.toContain('under budget')
+    expect(blurb).not.toContain('-')
+    // It was the only pref and the car missed it -> generic fallback.
+    expect(blurb).toBe('Top pick for your preferences')
+  })
+
+  test('a car above the range floor reports its headroom', () => {
+    const blurb = matchBlurb(makeCar({}), { minRangeMi: 300 })
+    // 346 - 300 = 46.
+    expect(blurb).toContain('46 mi of range headroom')
+  })
+
+  test('a car short of the range floor skips the clause (no negative headroom)', () => {
+    const blurb = matchBlurb(makeCar({}), { minRangeMi: 400 })
+    expect(blurb).not.toContain('range headroom')
+    expect(blurb).toBe('Top pick for your preferences')
+  })
+
+  test('a matching bodyStyle is called out; a mismatch is not', () => {
+    expect(matchBlurb(makeCar({}), { bodyStyle: 'sedan' })).toContain('sedan you wanted')
+    expect(matchBlurb(makeCar({}), { bodyStyle: 'truck' })).not.toContain('you wanted')
+  })
+
+  test('multiple satisfied prefs are joined with " · "', () => {
+    const blurb = matchBlurb(makeCar({}), {
+      maxPriceUsd: 60_000,
+      minRangeMi: 300,
+      minSeats: 5,
+      bodyStyle: 'sedan',
+    })
+    expect(blurb).toContain(' · ')
+    expect(blurb).toContain('$12,510 under budget')
+    expect(blurb).toContain('46 mi of range headroom')
+    expect(blurb).toContain('seats 5')
+    expect(blurb).toContain('sedan you wanted')
   })
 })
