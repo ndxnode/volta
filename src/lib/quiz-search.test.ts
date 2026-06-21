@@ -4,8 +4,11 @@ import type { QuizPrefs } from '@/lib/ev-quiz'
 import {
   quizPrefsFromSearch,
   quizPrefsToSearch,
+  runningCostFromSearch,
+  runningCostToSearch,
   shareableQuizUrl,
   type QuizSearch,
+  type RunningCostInputs,
 } from '@/lib/quiz-search'
 
 describe('round-trip identity', () => {
@@ -56,6 +59,49 @@ describe('quizPrefsToSearch omits undefined keys', () => {
 
   test('non-positive prefs are not emitted to the URL', () => {
     expect(quizPrefsToSearch({ maxPriceUsd: 0, minSeats: -2 })).toEqual({})
+  })
+})
+
+describe('running-cost inputs round-trip', () => {
+  test('milesPerYear + pricePerKwh survive inputs -> search -> inputs', () => {
+    const inputs: RunningCostInputs = { milesPerYear: 15_000, pricePerKwh: 0.21 }
+    expect(runningCostFromSearch(runningCostToSearch(inputs))).toEqual(inputs)
+  })
+
+  test('a decimal pricePerKwh (0.17) survives the round-trip unchanged', () => {
+    const inputs: RunningCostInputs = { pricePerKwh: 0.17 }
+    const back = runningCostFromSearch(runningCostToSearch(inputs))
+    expect(back).toEqual(inputs)
+    expect(back.pricePerKwh).toBe(0.17)
+  })
+
+  test('junk / negative / NaN / zero inputs are dropped', () => {
+    const search = {
+      milesPerYear: -5,
+      pricePerKwh: Number.NaN,
+    } as unknown as QuizSearch
+    expect(runningCostFromSearch(search)).toEqual({})
+    expect(
+      runningCostFromSearch({ milesPerYear: 0, pricePerKwh: -1 } as QuizSearch),
+    ).toEqual({})
+  })
+
+  test('runningCostToSearch on {} returns {} (undefined keys omitted)', () => {
+    const search = runningCostToSearch({})
+    expect(search).toEqual({})
+    expect(Object.keys(search)).toEqual([])
+  })
+
+  test('a merge carries BOTH prefs and running-cost keys', () => {
+    const merged = {
+      ...quizPrefsToSearch({ maxPriceUsd: 40_000 }),
+      ...runningCostToSearch({ milesPerYear: 18_000, pricePerKwh: 0.13 }),
+    }
+    expect(merged).toEqual({
+      budget: 40_000,
+      milesPerYear: 18_000,
+      pricePerKwh: 0.13,
+    })
   })
 })
 

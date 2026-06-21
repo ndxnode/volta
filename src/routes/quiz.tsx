@@ -7,7 +7,17 @@ import { BodyStyle } from '@/lib/car-schema'
 import { carsQueryOptions } from '@/lib/queries'
 import { MAX_COMPARE_IDS } from '@/lib/compare-config'
 import { matchBlurb, rankCars, type QuizPrefs } from '@/lib/ev-quiz'
-import { quizPrefsFromSearch, quizPrefsToSearch } from '@/lib/quiz-search'
+import {
+  quizPrefsFromSearch,
+  quizPrefsToSearch,
+  runningCostFromSearch,
+  runningCostToSearch,
+  type RunningCostInputs,
+} from '@/lib/quiz-search'
+import {
+  estimateAnnualEnergyCost,
+  formatAnnualCost,
+} from '@/lib/running-cost'
 import { useSuspenseQuery } from '@tanstack/react-query'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -30,6 +40,10 @@ const quizSearchSchema = z.object({
   minRange: z.coerce.number().positive().optional().catch(undefined),
   body: z.enum(BodyStyle.options).optional().catch(undefined),
   seats: z.coerce.number().positive().optional().catch(undefined),
+  // Running-cost inputs (don't affect scoring — only the per-result annual
+  // energy-cost estimate). Same resilient posture as the prefs keys.
+  milesPerYear: z.coerce.number().positive().optional().catch(undefined),
+  pricePerKwh: z.coerce.number().positive().optional().catch(undefined),
 })
 
 export const Route = createFileRoute('/quiz')({
@@ -58,6 +72,10 @@ function QuizPage() {
   // Prefs live in the URL (shareable + back-button friendly). Derive them via
   // the pure quiz-search bridge so junk in the URL can't poison scoring.
   const prefs = quizPrefsFromSearch(search)
+  // Running-cost inputs live alongside the prefs in the URL but are kept in a
+  // separate shape (they don't affect scoring). Disjoint keys, so both sets
+  // coexist when merged on navigate.
+  const costInputs = runningCostFromSearch(search)
 
   // Displayed input values come straight from the search-derived prefs.
   // Empty string = "no preference set"; ANY = the Select's "no pref" sentinel.
@@ -65,13 +83,34 @@ function QuizPage() {
   const minRange = prefs.minRangeMi !== undefined ? String(prefs.minRangeMi) : ''
   const bodyStyle = prefs.bodyStyle ?? ANY
   const minSeats = prefs.minSeats !== undefined ? String(prefs.minSeats) : ANY
+  const milesPerYear =
+    costInputs.milesPerYear !== undefined ? String(costInputs.milesPerYear) : ''
+  const pricePerKwh =
+    costInputs.pricePerKwh !== undefined ? String(costInputs.pricePerKwh) : ''
 
-  // Write the next prefs back to the URL. `replace: true` (like compare's
-  // handleRemove) so typing doesn't spam the history stack.
+  // Write the next prefs back to the URL, PRESERVING the current cost inputs so
+  // editing a pref doesn't drop the running-cost state. `replace: true` (like
+  // compare's handleRemove) so typing doesn't spam the history stack.
   function applyPrefs(nextPrefs: QuizPrefs) {
     void navigate({
       to: '/quiz',
-      search: quizPrefsToSearch(nextPrefs),
+      search: {
+        ...quizPrefsToSearch(nextPrefs),
+        ...runningCostToSearch(costInputs),
+      },
+      replace: true,
+    })
+  }
+
+  // Inverse of applyPrefs: write the next cost inputs back while PRESERVING the
+  // current prefs, so the two kinds of state coexist in the URL.
+  function applyCostInputs(nextInputs: RunningCostInputs) {
+    void navigate({
+      to: '/quiz',
+      search: {
+        ...quizPrefsToSearch(prefs),
+        ...runningCostToSearch(nextInputs),
+      },
       replace: true,
     })
   }
@@ -184,6 +223,72 @@ function QuizPage() {
             </Select>
           </div>
 
+          <div className="space-y-2">
+            <Label htmlFor="quiz-miles-per-year">Miles / year</Label>
+            <Input
+              id="quiz-miles-per-year"
+              type="number"
+              inputMode="numeric"
+              min={0}
+              step={1000}
+              placeholder="12,000"
+              value={milesPerYear}
+              onChange={(event) =>
+                applyCostInputs({
+                  ...costInputs,
+                  milesPerYear: event.target.value
+                    ? Number(event.target.value)
+                    : undefined,
+                })
+              }
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="quiz-price-per-kwh">Price / kWh ($)</Label>
+            <Input
+              id="quiz-price-per-kwh"
+              type="number"
+              inputMode="decimal"
+              min={0}
+              step={0.01}
+              placeholder="0.17"
+              value={pricePerKwh}
+              onChange={(event) =>
+                applyCostInputs({
+                  ...costInputs,
+                  pricePerKwh: event.target.value
+                    ? Number(event.target.value)
+                    : undefined,
+                })
+              }
+            />
+          </div>
+
+          {/*
+            YOUR TURN (user, ~5-10 lines): wire this button's onClick to reset
+            the running-cost inputs to their defaults. Navigate DROPPING the two
+            running-cost keys so the inputs fall back to 12k mi / $0.17:
+              onClick={() =>
+                navigate({
+                  to: '/quiz',
+                  search: quizPrefsToSearch(prefs), // omit milesPerYear/pricePerKwh
+                  replace: true,
+                })
+              }
+            Then remove `disabled`. Left disabled + no-op this cycle to keep the
+            build green.
+          */}
+          <Button
+            type="button"
+            variant="outline"
+            className="w-full"
+            disabled
+            onClick={() => {}}
+          >
+            Reset cost to defaults
+          </Button>
+
           {top.length > 0 ? (
             <Button asChild className="w-full">
               {/* TanStack Link round-trips through compareSearchSchema; capped <= MAX_COMPARE_IDS. */}
@@ -232,6 +337,17 @@ function QuizPage() {
                   </div>
                   <div className="text-xs text-muted-foreground">
                     {car.rangeMi} mi · {car.seats} seats
+                  </div>
+                  <div className="text-xs text-muted-foreground">
+                    {/* Unset inputs are undefined here; the helper's params
+                        default to 12k mi / $0.17, so cost falls back cleanly. */}
+                    {formatAnnualCost(
+                      estimateAnnualEnergyCost(
+                        car,
+                        costInputs.milesPerYear,
+                        costInputs.pricePerKwh,
+                      ),
+                    )}
                   </div>
                 </div>
               </GlassCard>
