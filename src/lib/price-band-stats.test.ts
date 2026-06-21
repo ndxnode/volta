@@ -131,7 +131,48 @@ describe('priceBandDistribution', () => {
 })
 
 describe('priceBandShare', () => {
-  test('returns a non-empty string (YOUR TURN stub)', () => {
-    expect(priceBandShare([makeCar({})], '$40-60k').length).toBeGreaterThan(0)
+  test('empty fleet -> "0%" (no divide-by-zero)', () => {
+    expect(priceBandShare([], '$40-60k')).toBe('0%')
+  })
+
+  test('a band holding exactly half of the fleet -> "50%"', () => {
+    const cars = [
+      makeCar({ priceUsd: 50_000 }),
+      makeCar({ priceUsd: 50_000 }),
+      makeCar({ priceUsd: 90_000 }),
+      makeCar({ priceUsd: 90_000 }),
+    ]
+    expect(priceBandShare(cars, '$40-60k')).toBe('50%')
+  })
+
+  test('rounds to a whole percent (one of three distinct -> "33%", Math.round not floor)', () => {
+    const cars = [
+      makeCar({ priceUsd: 30_000 }),
+      makeCar({ priceUsd: 50_000 }),
+      makeCar({ priceUsd: 90_000 }),
+    ]
+    // 1 / 3 = 33.33...% -> rounds to 33
+    expect(priceBandShare(cars, '<$40k')).toBe('33%')
+  })
+
+  test('a populated fleet with no cars in the queried band -> "0%"', () => {
+    expect(priceBandShare([makeCar({ priceUsd: 50_000 })], '$80k+')).toBe('0%')
+  })
+
+  test('shares across all four bands each look like N% and sum to ~100', () => {
+    const cars = [
+      makeCar({ priceUsd: 30_000 }),
+      makeCar({ priceUsd: 50_000 }),
+      makeCar({ priceUsd: 50_000 }),
+      makeCar({ priceUsd: 70_000 }),
+      makeCar({ priceUsd: 90_000 }),
+    ]
+    const bands = ['<$40k', '$40-60k', '$60-80k', '$80k+'] as const
+    const shares = bands.map((b) => priceBandShare(cars, b))
+    for (const s of shares) {
+      expect(s).toMatch(/^\d+%$/)
+    }
+    const sum = shares.reduce((acc, s) => acc + Number.parseInt(s, 10), 0)
+    expect(Math.abs(sum - 100)).toBeLessThanOrEqual(3)
   })
 })

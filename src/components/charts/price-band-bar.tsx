@@ -10,7 +10,11 @@ import {
   type ChartConfig,
 } from '@/components/ui/chart'
 import { Skeleton } from '@/components/ui/skeleton'
-import { priceBandDistribution } from '@/lib/price-band-stats'
+import {
+  priceBandDistribution,
+  priceBandShare,
+  type PriceBand,
+} from '@/lib/price-band-stats'
 
 const BODY_HEIGHT = 420
 
@@ -53,9 +57,17 @@ export function PriceBandBar({ cars }: { cars: Car[] }) {
             content={
               <ChartTooltipContent
                 labelFormatter={(label) => String(label)}
-                formatter={(value) => (
-                  <span className="font-mono tabular-nums">{Number(value)} cars</span>
-                )}
+                formatter={(value, _name, item) => {
+                  const share = priceBandShare(
+                    cars,
+                    (item.payload as { band: PriceBand }).band,
+                  )
+                  return (
+                    <span className="font-mono tabular-nums">
+                      {Number(value)} cars · {share} of fleet
+                    </span>
+                  )
+                }}
               />
             }
           />
