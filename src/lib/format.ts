@@ -36,3 +36,12 @@ export function formatZeroToSixty(sec: number): string {
 export function formatEfficiency(whPerMi: number): string {
   return `${integer.format(whPerMi)} Wh/mi`
 }
+
+/**
+ * Title-case a body-style name for display, e.g. `'sedan'` -> `'Sedan'`.
+ * Special-cases `'suv'` -> `'SUV'` since it's an initialism.
+ */
+export function formatBodyStyle(style: string): string {
+  if (style === 'suv') return 'SUV'
+  return style.charAt(0).toUpperCase() + style.slice(1)
+}

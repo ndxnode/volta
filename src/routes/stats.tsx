@@ -13,6 +13,7 @@ import { ChartCard } from '@/components/charts/chart-card'
 import { RangePriceScatter } from '@/components/charts/range-price-scatter'
 import { BatteryByBrand } from '@/components/charts/battery-by-brand'
 import { EfficiencyLeaders } from '@/components/charts/efficiency-leaders'
+import { BodyStyleBar } from '@/components/charts/body-style-bar'
 
 export const Route = createFileRoute('/stats')({
   loader: async ({ context }) => {
@@ -122,6 +123,15 @@ function StatsPage() {
           <EfficiencyLeaders cars={cars} />
         </ChartCard>
       </div>
+
+      {/* Body-style distribution — full width, like the scatter */}
+      <ChartCard
+        title="Body styles on the floor"
+        subtitle="How the showroom splits across sedans, SUVs, trucks and the rest."
+        bodyHeight={420}
+      >
+        <BodyStyleBar cars={cars} />
+      </ChartCard>
     </div>
   )
 }
