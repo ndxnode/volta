@@ -74,7 +74,7 @@ function ComparePage() {
       <PageHeader
         title="Compare"
         gradient
-        subtitle="Line up to three EVs side by side. The best value in each spec is highlighted."
+        subtitle="Line up to six EVs side by side. The best value in each spec is highlighted."
       />
 
       <div className="mt-8">
