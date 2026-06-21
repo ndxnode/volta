@@ -60,20 +60,19 @@ export function seatsDistribution(cars: Pick<Car, 'seats'>[]): SeatCount[] {
 }
 
 /**
- * A single seat band's percentage share of the fleet.
+ * A single seat band's whole-percent share of the fleet, e.g. `'38%'`.
  *
- * YOUR TURN (user, ~5-10 lines): replace the hardcoded fallback with the real
- * share. Count how many cars fall in `band` (e.g. reuse `seatsDistribution(cars)`
- * and find the matching row, or a `.filter().length`), divide by `cars.length`,
- * multiply by 100, and `Math.round` it into a whole-percent string like `'38%'`.
- * Guard the empty fleet first: `if (cars.length === 0) return '0%'` so you never
- * divide by zero. Keep it a pure string return so it stays unit-testable. The
- * hardcoded `'—'` below keeps the build green and the chart ships count bars
- * only — wiring this into a tooltip suffix or sub-label is the next step after.
+ * Reuses the pure `seatsDistribution(cars)` to count cars in `band`, divides by
+ * the fleet size and rounds to a whole percent. Guards the empty fleet FIRST
+ * (`cars.length === 0` -> `'0%'`) so it never divides by zero. Because all seven
+ * bands are always seeded, a band with no cars finds a `count: 0` row (not
+ * `undefined`), but `row?.count ?? 0` null-guards defensively either way. Pure:
+ * no DOM / React / chart imports — a plain, unit-testable string return.
  */
-export function seatsShare(
-  _cars: Pick<Car, 'seats'>[],
-  _band: SeatBand,
-): string {
-  return '—'
+export function seatsShare(cars: Pick<Car, 'seats'>[], band: SeatBand): string {
+  if (cars.length === 0) return '0%'
+  const row = seatsDistribution(cars).find((r) => r.band === band)
+  const count = row?.count ?? 0
+  const pct = Math.round((count / cars.length) * 100)
+  return `${pct}%`
 }

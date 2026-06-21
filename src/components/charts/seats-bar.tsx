@@ -10,7 +10,7 @@ import {
   type ChartConfig,
 } from '@/components/ui/chart'
 import { Skeleton } from '@/components/ui/skeleton'
-import { seatsDistribution } from '@/lib/seats-stats'
+import { seatsDistribution, seatsShare, type SeatBand } from '@/lib/seats-stats'
 
 const BODY_HEIGHT = 420
 
@@ -53,9 +53,17 @@ export function SeatsBar({ cars }: { cars: Car[] }) {
             content={
               <ChartTooltipContent
                 labelFormatter={(label) => String(label)}
-                formatter={(value) => (
-                  <span className="font-mono tabular-nums">{Number(value)} cars</span>
-                )}
+                formatter={(value, _name, item) => {
+                  const share = seatsShare(
+                    cars,
+                    (item.payload as { band: SeatBand }).band,
+                  )
+                  return (
+                    <span className="font-mono tabular-nums">
+                      {Number(value)} cars · {share} of fleet
+                    </span>
+                  )
+                }}
               />
             }
           />

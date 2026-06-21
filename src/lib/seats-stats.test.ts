@@ -117,7 +117,49 @@ describe('seatsDistribution', () => {
 })
 
 describe('seatsShare', () => {
-  test('returns a non-empty string (YOUR TURN stub)', () => {
-    expect(seatsShare([makeCar({})], '5').length).toBeGreaterThan(0)
+  test('empty fleet -> "0%" (no divide-by-zero)', () => {
+    expect(seatsShare([], '5')).toBe('0%')
+  })
+
+  test('a band holding exactly half of the fleet -> "50%"', () => {
+    const cars = [
+      makeCar({ seats: 5 }),
+      makeCar({ seats: 5 }),
+      makeCar({ seats: 8 }),
+      makeCar({ seats: 8 }),
+    ]
+    expect(seatsShare(cars, '5')).toBe('50%')
+  })
+
+  test('rounds to a whole percent (one of three distinct -> "33%", Math.round not floor)', () => {
+    const cars = [
+      makeCar({ seats: 5 }),
+      makeCar({ seats: 7 }),
+      makeCar({ seats: 8 }),
+    ]
+    // 1 / 3 = 33.33...% -> rounds to 33
+    expect(seatsShare(cars, '5')).toBe('33%')
+  })
+
+  test('a populated fleet with no cars in the queried (gap) band -> "0%"', () => {
+    expect(seatsShare([makeCar({ seats: 5 })], '3')).toBe('0%')
+  })
+
+  test('shares across all seven bands each look like N% and sum to ~100', () => {
+    const cars = [
+      makeCar({ seats: 2 }),
+      makeCar({ seats: 4 }),
+      makeCar({ seats: 5 }),
+      makeCar({ seats: 5 }),
+      makeCar({ seats: 7 }),
+      makeCar({ seats: 8 }),
+    ]
+    const bands = ['2', '3', '4', '5', '6', '7', '8'] as const
+    const shares = bands.map((b) => seatsShare(cars, b))
+    for (const s of shares) {
+      expect(s).toMatch(/^\d+%$/)
+    }
+    const sum = shares.reduce((acc, s) => acc + Number.parseInt(s, 10), 0)
+    expect(Math.abs(sum - 100)).toBeLessThanOrEqual(3)
   })
 })
