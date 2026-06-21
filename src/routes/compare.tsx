@@ -85,7 +85,7 @@ function ComparePage() {
             hint={
               cars.length === 1
                 ? 'Pick at least one more EV from the browse page to see them side by side.'
-                : 'Select two or three EVs from the browse page to line them up side by side.'
+                : 'Select up to six EVs from the browse page to line them up side by side.'
             }
             action={
               <Button asChild>
