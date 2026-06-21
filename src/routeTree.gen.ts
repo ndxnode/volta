@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as WishlistRouteImport } from './routes/wishlist'
 import { Route as StatsRouteImport } from './routes/stats'
+import { Route as QuizRouteImport } from './routes/quiz'
 import { Route as FavoritesRouteImport } from './routes/favorites'
 import { Route as CompareRouteImport } from './routes/compare'
 import { Route as IndexRouteImport } from './routes/index'
@@ -27,6 +28,11 @@ const WishlistRoute = WishlistRouteImport.update({
 const StatsRoute = StatsRouteImport.update({
   id: '/stats',
   path: '/stats',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const QuizRoute = QuizRouteImport.update({
+  id: '/quiz',
+  path: '/quiz',
   getParentRoute: () => rootRouteImport,
 } as any)
 const FavoritesRoute = FavoritesRouteImport.update({
@@ -69,6 +75,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/compare': typeof CompareRoute
   '/favorites': typeof FavoritesRoute
+  '/quiz': typeof QuizRoute
   '/stats': typeof StatsRoute
   '/wishlist': typeof WishlistRoute
   '/api/cars': typeof ApiCarsRouteWithChildren
@@ -80,6 +87,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/compare': typeof CompareRoute
   '/favorites': typeof FavoritesRoute
+  '/quiz': typeof QuizRoute
   '/stats': typeof StatsRoute
   '/wishlist': typeof WishlistRoute
   '/api/cars': typeof ApiCarsRouteWithChildren
@@ -92,6 +100,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/compare': typeof CompareRoute
   '/favorites': typeof FavoritesRoute
+  '/quiz': typeof QuizRoute
   '/stats': typeof StatsRoute
   '/wishlist': typeof WishlistRoute
   '/api/cars': typeof ApiCarsRouteWithChildren
@@ -105,6 +114,7 @@ export interface FileRouteTypes {
     | '/'
     | '/compare'
     | '/favorites'
+    | '/quiz'
     | '/stats'
     | '/wishlist'
     | '/api/cars'
@@ -116,6 +126,7 @@ export interface FileRouteTypes {
     | '/'
     | '/compare'
     | '/favorites'
+    | '/quiz'
     | '/stats'
     | '/wishlist'
     | '/api/cars'
@@ -127,6 +138,7 @@ export interface FileRouteTypes {
     | '/'
     | '/compare'
     | '/favorites'
+    | '/quiz'
     | '/stats'
     | '/wishlist'
     | '/api/cars'
@@ -139,6 +151,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   CompareRoute: typeof CompareRoute
   FavoritesRoute: typeof FavoritesRoute
+  QuizRoute: typeof QuizRoute
   StatsRoute: typeof StatsRoute
   WishlistRoute: typeof WishlistRoute
   ApiCarsRoute: typeof ApiCarsRouteWithChildren
@@ -160,6 +173,13 @@ declare module '@tanstack/react-router' {
       path: '/stats'
       fullPath: '/stats'
       preLoaderRoute: typeof StatsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/quiz': {
+      id: '/quiz'
+      path: '/quiz'
+      fullPath: '/quiz'
+      preLoaderRoute: typeof QuizRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/favorites': {
@@ -229,6 +249,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   CompareRoute: CompareRoute,
   FavoritesRoute: FavoritesRoute,
+  QuizRoute: QuizRoute,
   StatsRoute: StatsRoute,
   WishlistRoute: WishlistRoute,
   ApiCarsRoute: ApiCarsRouteWithChildren,

@@ -1,7 +1,8 @@
 import { useSyncExternalStore } from 'react'
 
+import { MAX_COMPARE_IDS } from '@/lib/compare-config'
+
 const STORAGE_KEY = 'volta:compare'
-const MAX_COMPARE_IDS = 6
 const EMPTY_IDS = Object.freeze([]) as readonly string[]
 
 const ids = new Set<string>()
