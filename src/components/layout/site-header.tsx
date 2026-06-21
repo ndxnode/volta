@@ -12,6 +12,7 @@ const NAV_LINKS: { to: LinkProps['to']; label: string }[] = [
   { to: '/compare' as LinkProps['to'], label: 'Compare' },
   { to: '/stats' as LinkProps['to'], label: 'Stats' },
   { to: '/favorites' as LinkProps['to'], label: 'Favorites' },
+  { to: '/wishlist' as LinkProps['to'], label: 'Wishlist' },
 ]
 
 function openCommand() {

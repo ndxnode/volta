@@ -9,6 +9,7 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as WishlistRouteImport } from './routes/wishlist'
 import { Route as StatsRouteImport } from './routes/stats'
 import { Route as FavoritesRouteImport } from './routes/favorites'
 import { Route as CompareRouteImport } from './routes/compare'
@@ -18,6 +19,11 @@ import { Route as CarsIdRouteImport } from './routes/cars/$id'
 import { Route as ApiCarsRouteImport } from './routes/api/cars'
 import { Route as ApiCarsIdRouteImport } from './routes/api/cars.$id'
 
+const WishlistRoute = WishlistRouteImport.update({
+  id: '/wishlist',
+  path: '/wishlist',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const StatsRoute = StatsRouteImport.update({
   id: '/stats',
   path: '/stats',
@@ -64,6 +70,7 @@ export interface FileRoutesByFullPath {
   '/compare': typeof CompareRoute
   '/favorites': typeof FavoritesRoute
   '/stats': typeof StatsRoute
+  '/wishlist': typeof WishlistRoute
   '/api/cars': typeof ApiCarsRouteWithChildren
   '/cars/$id': typeof CarsIdRoute
   '/cars/': typeof CarsIndexRoute
@@ -74,6 +81,7 @@ export interface FileRoutesByTo {
   '/compare': typeof CompareRoute
   '/favorites': typeof FavoritesRoute
   '/stats': typeof StatsRoute
+  '/wishlist': typeof WishlistRoute
   '/api/cars': typeof ApiCarsRouteWithChildren
   '/cars/$id': typeof CarsIdRoute
   '/cars': typeof CarsIndexRoute
@@ -85,6 +93,7 @@ export interface FileRoutesById {
   '/compare': typeof CompareRoute
   '/favorites': typeof FavoritesRoute
   '/stats': typeof StatsRoute
+  '/wishlist': typeof WishlistRoute
   '/api/cars': typeof ApiCarsRouteWithChildren
   '/cars/$id': typeof CarsIdRoute
   '/cars/': typeof CarsIndexRoute
@@ -97,6 +106,7 @@ export interface FileRouteTypes {
     | '/compare'
     | '/favorites'
     | '/stats'
+    | '/wishlist'
     | '/api/cars'
     | '/cars/$id'
     | '/cars/'
@@ -107,6 +117,7 @@ export interface FileRouteTypes {
     | '/compare'
     | '/favorites'
     | '/stats'
+    | '/wishlist'
     | '/api/cars'
     | '/cars/$id'
     | '/cars'
@@ -117,6 +128,7 @@ export interface FileRouteTypes {
     | '/compare'
     | '/favorites'
     | '/stats'
+    | '/wishlist'
     | '/api/cars'
     | '/cars/$id'
     | '/cars/'
@@ -128,6 +140,7 @@ export interface RootRouteChildren {
   CompareRoute: typeof CompareRoute
   FavoritesRoute: typeof FavoritesRoute
   StatsRoute: typeof StatsRoute
+  WishlistRoute: typeof WishlistRoute
   ApiCarsRoute: typeof ApiCarsRouteWithChildren
   CarsIdRoute: typeof CarsIdRoute
   CarsIndexRoute: typeof CarsIndexRoute
@@ -135,6 +148,13 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/wishlist': {
+      id: '/wishlist'
+      path: '/wishlist'
+      fullPath: '/wishlist'
+      preLoaderRoute: typeof WishlistRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/stats': {
       id: '/stats'
       path: '/stats'
@@ -210,6 +230,7 @@ const rootRouteChildren: RootRouteChildren = {
   CompareRoute: CompareRoute,
   FavoritesRoute: FavoritesRoute,
   StatsRoute: StatsRoute,
+  WishlistRoute: WishlistRoute,
   ApiCarsRoute: ApiCarsRouteWithChildren,
   CarsIdRoute: CarsIdRoute,
   CarsIndexRoute: CarsIndexRoute,

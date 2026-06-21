@@ -11,6 +11,7 @@ import { Button } from '@/components/ui/button'
 import { PageHeader } from '@/components/shared/page-header'
 import { EmptyState } from '@/components/shared/empty-state'
 import { CompareTable } from '@/components/compare/compare-table'
+import { SaveComparison } from '@/components/compare/save-comparison'
 
 const compareSearchSchema = z.object({
   // Deep-link support: /compare?cars=a,b,c (or repeated ?cars=a&cars=b) renders
@@ -93,7 +94,11 @@ function ComparePage() {
             }
           />
         ) : (
-          <CompareTable cars={cars} onRemove={handleRemove} />
+          <div className="space-y-4">
+            {/* Saving persists the live store selection (not deep-linked ids). */}
+            {!usingDeepLink ? <SaveComparison cars={cars} /> : null}
+            <CompareTable cars={cars} onRemove={handleRemove} />
+          </div>
         )}
       </div>
     </div>
