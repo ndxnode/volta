@@ -51,6 +51,15 @@ describe('estimateAnnualEnergyCost', () => {
     expect(thirsty).toBeGreaterThan(efficient)
   })
 
+  test('is monotonic in efficiency across the schema extremes (lower Wh/mi = lower cost), so the /compare lower-is-better highlight keyed on efficiencyWhPerMi tracks cost exactly', () => {
+    // efficiencyWhPerMi is a z.number().min(180).max(600) schema field. With the
+    // uniform 12k mi / $0.17 defaults the compare "Cost / yr" row uses, ranking by
+    // efficiency must pick the same winner as ranking by cost.
+    const cheapest = estimateAnnualEnergyCost(makeCar({ efficiencyWhPerMi: 180 }))
+    const priciest = estimateAnnualEnergyCost(makeCar({ efficiencyWhPerMi: 600 }))
+    expect(cheapest).toBeLessThan(priciest)
+  })
+
   test('scales with miles driven (24k > 12k)', () => {
     const car = makeCar({ efficiencyWhPerMi: 250 })
     const lower = estimateAnnualEnergyCost(car, 12_000)

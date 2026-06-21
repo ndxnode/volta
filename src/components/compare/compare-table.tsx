@@ -18,6 +18,7 @@ import {
   serializeCompareCsv,
   type CompareCsvRow,
 } from '@/lib/compare-csv'
+import { estimateAnnualEnergyCost, formatAnnualCost } from '@/lib/running-cost'
 import { Button } from '@/components/ui/button'
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group'
 import {
@@ -103,6 +104,28 @@ const SPEC_CATEGORIES: SpecCategory[] = [
         direction: 'higher',
         format: (car) => `${car.maxDcChargeKw} kW`,
         csv: (car) => String(car.maxDcChargeKw),
+      },
+      // Derived running-cost lens, co-located with the energy/charging specs.
+      // The best-in-row highlight ranks RAW Car fields via bestIndexFor, so this
+      // row is keyed on 'efficiencyWhPerMi' (direction 'lower'): with the uniform
+      // 12k mi / $0.17 defaults, estimateAnnualEnergyCost is strictly monotonic in
+      // efficiency, so ranking by efficiency picks the exact same winner(s) as
+      // ranking by cost — correct highlight, no change to bestIndexFor. (Sharing
+      // the 'efficiencyWhPerMi' key with the 'Efficiency' row is fine: winnersByRow
+      // is keyed by the unique row.label, not by key.)
+      //
+      // YOUR TURN (user, ~5-10 lines): thread real miles/$ inputs into /compare so
+      // this column reflects the user's own driving instead of the 12k/$0.17
+      // defaults. Add a number-input pair (like /quiz already has — see
+      // runningCostFromSearch/runningCostToSearch in quiz-search.ts) and pass the
+      // values positionally: formatAnnualCost(estimateAnnualEnergyCost(car, miles,
+      // price)). For now it uses the helper defaults.
+      {
+        key: 'efficiencyWhPerMi',
+        label: 'Cost / yr',
+        direction: 'lower',
+        format: (car) => formatAnnualCost(estimateAnnualEnergyCost(car)),
+        csv: (car) => formatAnnualCost(estimateAnnualEnergyCost(car)),
       },
     ],
   },
