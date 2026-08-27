@@ -11,6 +11,7 @@ dist-ssr
 .vinxi
 __unconfig*
 todos.json
+.claude/
 
 # local seed data (re-fetch via scripts/fetch-seed.sh)
 data/seed/
