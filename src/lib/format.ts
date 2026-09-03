@@ -36,3 +36,23 @@ export function formatZeroToSixty(sec: number): string {
 export function formatEfficiency(whPerMi: number): string {
   return `${integer.format(whPerMi)} Wh/mi`
 }
+
+/**
+ * Title-case a body-style name for display, e.g. `'sedan'` -> `'Sedan'`.
+ * Special-cases `'suv'` -> `'SUV'` since it's an initialism.
+ */
+export function formatBodyStyle(style: string): string {
+  if (style === 'suv') return 'SUV'
+  return style.charAt(0).toUpperCase() + style.slice(1)
+}
+
+/**
+ * Display a drivetrain name. Identity passthrough — `'RWD'` / `'AWD'` / `'FWD'`
+ * are already display-ready uppercase initialisms. Kept as a formatter (rather
+ * than inlined at the call site) so the drivetrain bar chart stays structurally
+ * identical to the body-style chart and there's a single clear spot to enrich
+ * labels later, e.g. `'AWD'` -> `'All-wheel drive'`.
+ */
+export function formatDrivetrain(d: string): string {
+  return d
+}

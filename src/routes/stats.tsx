@@ -6,6 +6,7 @@ import { m } from 'motion/react'
 import type { Car } from '@/lib/car-schema'
 import { carsQueryOptions } from '@/lib/queries'
 import { formatPrice } from '@/lib/format'
+import { fleetSummary } from '@/lib/fleet-summary'
 import { PageHeader } from '@/components/shared/page-header'
 import { GlassCard } from '@/components/shared/glass-card'
 import { AnimatedNumber } from '@/components/shared/animated-number'
@@ -13,6 +14,10 @@ import { ChartCard } from '@/components/charts/chart-card'
 import { RangePriceScatter } from '@/components/charts/range-price-scatter'
 import { BatteryByBrand } from '@/components/charts/battery-by-brand'
 import { EfficiencyLeaders } from '@/components/charts/efficiency-leaders'
+import { BodyStyleBar } from '@/components/charts/body-style-bar'
+import { DrivetrainBar } from '@/components/charts/drivetrain-bar'
+import { PriceBandBar } from '@/components/charts/price-band-bar'
+import { SeatsBar } from '@/components/charts/seats-bar'
 
 export const Route = createFileRoute('/stats')({
   loader: async ({ context }) => {
@@ -59,6 +64,7 @@ function computeHeadlines(cars: Car[]): Headline[] {
 function StatsPage() {
   const { data: cars } = useSuspenseQuery(carsQueryOptions())
   const headlines = React.useMemo(() => computeHeadlines(cars), [cars])
+  const summary = React.useMemo(() => fleetSummary(cars), [cars])
 
   return (
     <div className="mx-auto w-full max-w-6xl space-y-10 px-4 py-8 sm:px-6 lg:py-12">
@@ -67,6 +73,10 @@ function StatsPage() {
         title="Showroom analytics"
         subtitle="The fleet at a glance — range, value, battery and efficiency across every model on the floor."
       />
+
+      <p className="font-mono text-sm text-muted-foreground tabular-nums">
+        {summary}
+      </p>
 
       {/* Headline stat tiles */}
       <m.div
@@ -122,6 +132,42 @@ function StatsPage() {
           <EfficiencyLeaders cars={cars} />
         </ChartCard>
       </div>
+
+      {/* Body-style distribution — full width, like the scatter */}
+      <ChartCard
+        title="Body styles on the floor"
+        subtitle="How the showroom splits across sedans, SUVs, trucks and the rest."
+        bodyHeight={420}
+      >
+        <BodyStyleBar cars={cars} />
+      </ChartCard>
+
+      {/* Drivetrain mix — full width, like the scatter */}
+      <ChartCard
+        title="Drivetrain mix"
+        subtitle="How the floor splits across rear-, all- and front-wheel-drive setups."
+        bodyHeight={420}
+      >
+        <DrivetrainBar cars={cars} />
+      </ChartCard>
+
+      {/* Price bands — full width, like the scatter */}
+      <ChartCard
+        title="Price bands"
+        subtitle="How the floor spreads across price tiers, from sub-$40k to the $80k-plus flagships."
+        bodyHeight={420}
+      >
+        <PriceBandBar cars={cars} />
+      </ChartCard>
+
+      {/* Seat counts — full width, like the scatter */}
+      <ChartCard
+        title="Seat counts"
+        subtitle="How the floor splits across two-seat sports cars, five-seat mainstays and seven-/eight-seat haulers."
+        bodyHeight={420}
+      >
+        <SeatsBar cars={cars} />
+      </ChartCard>
     </div>
   )
 }

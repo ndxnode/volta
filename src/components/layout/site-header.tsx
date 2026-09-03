@@ -9,9 +9,11 @@ import { cn } from '@/lib/utils'
 // files land; the casts widen safely once the routes are registered.
 const NAV_LINKS: { to: LinkProps['to']; label: string }[] = [
   { to: '/cars' as LinkProps['to'], label: 'Browse' },
+  { to: '/quiz' as LinkProps['to'], label: 'Find my EV' },
   { to: '/compare' as LinkProps['to'], label: 'Compare' },
   { to: '/stats' as LinkProps['to'], label: 'Stats' },
   { to: '/favorites' as LinkProps['to'], label: 'Favorites' },
+  { to: '/wishlist' as LinkProps['to'], label: 'Wishlist' },
 ]
 
 function openCommand() {
